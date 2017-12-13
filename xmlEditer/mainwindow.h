@@ -15,7 +15,7 @@ public:
 
 private slots:
     void open();
-    void save();
+    void saveAs();
 
 private:
     QAction *OpenAction;

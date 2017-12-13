@@ -106,6 +106,19 @@ void DomEditer::maketree(QDomNode parent, QTreeWidgetItem *qgparent, QModelIndex
     while (!sib.isNull())
     {
         QTreeWidgetItem *qparent = new QTreeWidgetItem(qgparent, QStringList(sib.toElement().tagName()));
+
+        QDomNamedNodeMap attribute = sib.attributes();
+        if(!attribute.isEmpty())
+        {
+            QString sattribute;
+            for(int i = 0; i != attribute.length(); i++)
+            {
+                QDomNode atr = attribute.item(i);
+                sattribute = sattribute + atr.toAttr().name() + ": " + atr.toAttr().value() + "; ";
+            }
+            qparent->setToolTip(0, sattribute);
+        }
+
         QModelIndex index = TreeView->model()->index(row, 0, pindex);
 
         Node->push_back(sib);
@@ -140,6 +153,18 @@ void DomEditer::listfile()
     QStringList sroot;
     sroot << root.tagName();
     QTreeWidgetItem *troot = new QTreeWidgetItem(TreeView, sroot);
+
+    QDomNamedNodeMap attribute = root.attributes();
+    if(!attribute.isEmpty())
+    {
+        QString sattribute;
+        for(int i = 0; i != attribute.length(); i++)
+        {
+            QDomNode atr = attribute.item(i);
+            sattribute = sattribute + atr.toAttr().name() + ": " + atr.toAttr().value() + "; ";
+        }
+        troot->setToolTip(0, sattribute);
+    }
 
     QModelIndex index = TreeView->model()->index(0, 0);
 

@@ -5,6 +5,7 @@
 #include <QToolBar>
 #include <QDir>
 #include <QInputDialog>
+#include <QFileDialog>
 
 #include "mainwindow.h"
 #include "domediter.h"
@@ -21,10 +22,10 @@ MainWindow::MainWindow(QWidget *parent)
             , this, &MainWindow::open);
 
     SaveAction = new QAction(tr("&Save..."), this);
-    SaveAction->setShortcut(QKeySequence::Save);
+    SaveAction->setShortcut(QKeySequence::SaveAs);
     SaveAction->setStatusTip(tr("Save file"));
     connect(SaveAction, &QAction::triggered
-            , this, &MainWindow::save);
+            , this, &MainWindow::saveAs);
 
     QMenu *file = menuBar()->addMenu(tr("&File"));
     file->addAction(OpenAction);
@@ -42,9 +43,11 @@ MainWindow::~MainWindow()
 
 void MainWindow::open()
 {
-    QString path = QInputDialog::getText(this,
-                                         tr("file path"),
-                                         tr("path"));
+    QString path = QFileDialog::getOpenFileName(this
+                                                , tr("Open XML file")
+                                                , "D:/"
+                                                , tr("XML File (*.xml)")
+                                                );
     if(path.isEmpty())
     {
         QMessageBox::information(this,
@@ -58,7 +61,7 @@ void MainWindow::open()
     }
 }
 
-void MainWindow::save()
+void MainWindow::saveAs()
 {
 
 }
