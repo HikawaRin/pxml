@@ -42,16 +42,23 @@ DomEditer::DomEditer(QWidget *parent, const QString path)
     QPushButton *SavechangeButton = new QPushButton(tr("Save change"), this);
     QPushButton *addElementButton = new QPushButton(tr("add Element"), this);
     QPushButton *deletElementButton = new QPushButton(tr("delete Element"), this);
-    QPushButton *replaceTextButton = new QPushButton(tr("replace Text"), this);
+    QPushButton *replaceTextButton = new QPushButton(tr("replace Text/add attribute"), this);
+    QPushButton *deletAttribute = new QPushButton(tr("delete Attribute"), this);
+
+    QHBoxLayout *SaveButtonLayout = new QHBoxLayout;
     QHBoxLayout *Buttonlayout = new QHBoxLayout;
-    Buttonlayout->addWidget(SavechangeButton);
+
+    SaveButtonLayout->addWidget(SavechangeButton);
+
     Buttonlayout->addWidget(addElementButton);
     Buttonlayout->addWidget(deletElementButton);
     Buttonlayout->addWidget(replaceTextButton);
+    Buttonlayout->addWidget(deletAttribute);
 
     QVBoxLayout *layout = new QVBoxLayout;
     layout->addWidget(TreeView);
     layout->addLayout(Buttonlayout);
+    layout->addLayout(SaveButtonLayout);
     setLayout(layout);
 
     connect(SavechangeButton, &QPushButton::clicked
@@ -62,6 +69,8 @@ DomEditer::DomEditer(QWidget *parent, const QString path)
             , this, &DomEditer::deletEle);
     connect(replaceTextButton, &QPushButton::clicked
             , this, &DomEditer::replaceText);
+    connect(deletAttribute, &QPushButton::clicked
+            , this, &DomEditer::deletAttribute);
 }
 
 DomEditer::~DomEditer()
@@ -320,32 +329,99 @@ void DomEditer::replaceText()
         return;
     }else
     {
-        QString stext = QInputDialog::getText(this,
-                                                    tr("Replace text"),
-                                                    tr("text"));
         QDomNode node = Map->value(index);
-        if(node.toText().isNull())
+
+        if(!node.isText())
         {
-            QMessageBox::information(this,
-                                    tr("Write error"),
-                                    tr("This isn't a text node"));
+            QString sattri = QInputDialog::getText(this,
+                                                        tr("add attribute"),
+                                                        tr("attribute name"));
+            QDomAttr attri = Doc->createAttribute(sattri);
+            QString sattributeValue = QInputDialog::getText(this,
+                                                        tr("set Value"),
+                                                        tr("Value"));
+            attri.setValue(sattributeValue);
+
+            QDomNamedNodeMap attribute = node.attributes();
+            attribute.setNamedItem(attri);
+            QString sattribute;
+            for(int i = 0; i != attribute.length(); i++)
+            {
+                QDomNode atr = attribute.item(i);
+                sattribute = sattribute + atr.toAttr().name() + ": " + atr.toAttr().value() + "; ";
+            }
+
+            item->setToolTip(0, sattribute);
         }else
         {
-            QDomText ntext = Doc->createTextNode(stext);
-            QDomNode parent = node.parentNode();
-            parent.replaceChild(ntext, node);
+            QString stext = QInputDialog::getText(this,
+                                                        tr("Replace text"),
+                                                        tr("text"));
 
-            Map->remove(index);
-            Index->removeOne(index);
-            Index->push_back(index);
-            Node->push_back(ntext);
-            Map->insert(Index->last(), Node->last());
+            if(node.toText().isNull())
+            {
+                QMessageBox::information(this,
+                                        tr("Write error"),
+                                        tr("This isn't a text node"));
+            }else
+            {
+                QDomText ntext = Doc->createTextNode(stext);
+                QDomNode parent = node.parentNode();
+                parent.replaceChild(ntext, node);
 
-            QTreeWidgetItem *iparent = item->parent();
-            QStringList s;
-            s << stext;
-            new QTreeWidgetItem(iparent, s);
-            delete item;
+                Map->remove(index);
+                Index->removeOne(index);
+                Index->push_back(index);
+                Node->push_back(ntext);
+                Map->insert(Index->last(), Node->last());
+
+                QTreeWidgetItem *iparent = item->parent();
+                QStringList s;
+                s << stext;
+                new QTreeWidgetItem(iparent, s);
+                delete item;
+            }
         }
+    }
+}
+
+void DomEditer::deletAttribute()
+{
+    QItemSelectionModel *selectionmodel = TreeView->selectionModel();
+    QModelIndex index = selectionmodel->currentIndex();
+    QTreeWidgetItem *item = TreeView->currentItem();
+
+    if(!index.isValid())
+    {
+        return;
+    }else
+    {
+        QDomNode node = Map->value(index);
+        QDomNamedNodeMap attribute = node.attributes();
+        QString sattr = QInputDialog::getText(this,
+                                                    tr("Delete attribute"),
+                                                    tr("attribute name"));
+        if(attribute.removeNamedItem(sattr).isNull())
+        {
+            QMessageBox::information(this,
+                                    tr("Wrong"),
+                                    tr("No Attribute named %1").arg(sattr));
+            return;
+        }else
+        {
+            if(!attribute.isEmpty())
+            {
+                QString sattribute;
+                for(int i = 0; i != attribute.length(); i++)
+                {
+                    QDomNode atr = attribute.item(i);
+                    sattribute = sattribute + atr.toAttr().name() + ": " + atr.toAttr().value() + "; ";
+                }
+                item->setToolTip(0, sattribute);
+            }else
+            {
+                item->setToolTip(0, "");
+            }
+        };
     }
 }

@@ -29,6 +29,7 @@ private slots:
     void save();
     void deletEle();
     void replaceText();
+    void deletAttribute();
 
 private:
     void listfile();
