@@ -146,6 +146,8 @@ void DomEditer::maketree(QDomNode parent, QTreeWidgetItem *qgparent, QModelIndex
             Node->push_back(child);
             Index->push_back(cindex);
             Map->insert(Index->last(), Node->last());
+
+            DomEditer::maketree(child, qparent, index);
         }
 
         sib = sib.nextSibling();
